@@ -1,25 +1,37 @@
-import logo from './logo.svg';
+// Import necessary libraries
+import React, { useState } from 'react';
+import Login from './Login';
+import QuizGame from './QuizGame';
 import './App.css';
 
-function App() {
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const handleLoginSuccess = (userInfo) => {
+    setUser(userInfo);
+    setIsLoggedIn(true);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div className="app">
+      <header>
+        <h1>Pokemon Quiz Game</h1>
       </header>
+
+      <main>
+        {isLoggedIn ? (
+          <QuizGame user={user} />
+        ) : (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        )}
+      </main>
+
+      <footer>
+        <p>&copy; 2025 Pokemon Quiz Game. All Rights Reserved.</p>
+      </footer>
     </div>
   );
-}
+};
 
 export default App;
