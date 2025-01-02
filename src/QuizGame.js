@@ -7,7 +7,7 @@ const App = () => {
     <div className="game-container">
       {/* 상단: 방 정보 */}
       <header className="room-info">
-        <span>[788] 장난남의 방</span>
+        <span>[788] 어진님의 방</span>
         <span>참여자 8/8</span>
         <span>라운드 3</span>
         <span>10초</span>
