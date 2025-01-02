@@ -1,6 +1,6 @@
 // Import necessary libraries
 
-/*
+
 import React, { useState } from 'react';
 import Login from './Login';
 import QuizGame from './QuizGame';
@@ -37,8 +37,8 @@ const App = () => {
 };
 
 export default App;
-*/
 
+/*
 // Import necessary libraries
 import React, { useState } from 'react';
 import QuizGame from './QuizGame';
@@ -71,4 +71,4 @@ const App = () => {
 };
 
 export default App;
-
+*/
