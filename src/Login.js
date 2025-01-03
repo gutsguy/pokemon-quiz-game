@@ -1,7 +1,6 @@
 import React from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
-
 const Login = ({ onLoginSuccess }) => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -39,15 +38,22 @@ const Login = ({ onLoginSuccess }) => {
     console.error('Google Login Failure');
   };
 
+  const handleKakaoLogin = () => {
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${process.env.REACT_APP_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.REACT_APP_KAKAO_REDIRECT_URI)}&response_type=code`;
+    window.location.href = kakaoAuthUrl; // Redirect to Kakao Auth URL
+  };
+
   return (
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
       <div className="login-container">
         <h2>Login</h2>
+        {/* Google Login */}
         <GoogleLogin
           onSuccess={handleGoogleSuccess}
           onError={handleGoogleFailure}
         />
-        <button onClick={() => console.log('Kakao Login not implemented yet')}>Login with Kakao</button>
+        {/* Kakao Login */}
+        <button onClick={handleKakaoLogin}>Login with Kakao</button>
         <button onClick={() => console.log('Naver Login not implemented yet')}>Login with Naver</button>
       </div>
     </GoogleOAuthProvider>
