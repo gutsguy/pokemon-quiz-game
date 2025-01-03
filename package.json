@@ -4,7 +4,11 @@
   "private": true,
   "dependencies": {
     "@react-oauth/google": "^0.12.1",
+    "@vibrant/color": "^4.0.0",
+    "@vibrant/core": "^4.0.0",
+    "@vibrant/image": "^4.0.0",
     "cra-template": "1.2.0",
+    "node-vibrant": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1",
