@@ -13,6 +13,7 @@ const roomSchema = new mongoose.Schema({
     max_round: Number,
     game_order: [String],
     chat_room: [String],
+    is_gaming: Boolean
 });
 
 module.exports = mongoose.model('Room', roomSchema);

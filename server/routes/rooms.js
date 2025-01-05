@@ -6,22 +6,23 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   try {
     console.log('요청 데이터:', req.body); // 요청 데이터 로그 출력
-    const { name, maxParticipants } = req.body; // 클라이언트로부터 방 정보 받기
-    if (!name || !maxParticipants) {
-      throw new Error('필수 필드가 누락되었습니다');
+    const { room_name, max_participants, max_rounds, time_limit, selected_generations } = req.body; // 클라이언트로부터 방 정보 받기
+    if (!room_name, !max_participants, !max_rounds, !time_limit) {
+      throw new Error('필수 필드가 누락되었습.');
     }
     const newRoom = new Room({
       room_id: Date.now().toString(), // 고유 ID 생성
-      room_name: name,
+      room_name: room_name,
       member_id: [],
       member_score: [],
-      time: 60,
+      time: time_limit,
       round: 1,
-      generation: [],
-      max_participants: maxParticipants,
-      max_round: 5,
+      generation: selected_generations,
+      max_participants: max_participants,
+      max_round: max_rounds,
       game_order: [],
-      chat_room: []
+      chat_room: [],
+      is_gaming: false
     });
 
     await newRoom.save(); // DB에 방 저장
