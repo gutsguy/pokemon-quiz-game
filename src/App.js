@@ -5,9 +5,9 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-import Lobby from "./pages/Lobby";
+import Lobby from "./Lobby";
 import QuizGame from "./QuizGame";
-import Login from "./pages/Login";
+import Login from "./Login";
 import { authStore } from "./store/AuthStore";
 import { getMe } from "./apis/auth";
 
