@@ -10,6 +10,8 @@ const Room = require("./models/Room");
 
 const app = express();
 
+// MongoDB 연결
+connectDB();
 
 // 미들웨어 설정
 app.use(corsMiddleware);

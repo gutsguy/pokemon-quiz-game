@@ -45,10 +45,20 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchRooms(); // 로그인 상태일 때만 방 목록 불러오기
+    if (!initialized) {
+      getMe()
+        .then(data => {
+          setUser(data);
+          setInitialized(true);
+          console.log("User Info:", data);
+        })
+        .catch(() => {
+          setInitialized(true);
+        });
     }
-  }, [isLoggedIn]);
+  }, []);
+
+  if (!initialized) return null;
 
   return (
     <Router>
@@ -57,20 +67,18 @@ const App = () => {
           {/* 로그인 화면 */}
           <Route
             path="/login"
-            element={
-              isLoggedIn ? (
-                <Navigate to="/lobby" replace />
-              ) : (
-                <Login onLoginSuccess={handleLoginSuccess} />
-              )
-            }
+            element={loggedIn ? <Navigate to="/lobby" replace /> : <Login />}
           />
           {/* 로비 화면 */}
           <Route
             path="/lobby"
             element={
-              isLoggedIn ? (
-                <Lobby rooms={rooms} onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
+              loggedIn ? (
+                <Lobby 
+                  rooms={rooms}
+                  onCreateRoom={handleCreateRoom}
+                  onJoinRoom={handleJoinRoom} 
+                  />
               ) : (
                 <Navigate to="/login" replace />
               )
