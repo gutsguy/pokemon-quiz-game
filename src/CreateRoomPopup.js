@@ -6,8 +6,10 @@ const CreateRoomPopup = ({ onClose, onSubmit }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ name: roomName, maxParticipants: parseInt(maxParticipants, 10) }); // 방 정보 제출
+        onSubmit({ name: roomName, maxParticipants: parseInt(maxParticipants, 10) }); // 방 생성 요청
+        onClose(); // 팝업 닫기
     };
+
 
     return (
         <div className="popup-overlay">
