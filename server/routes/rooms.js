@@ -36,10 +36,10 @@ router.post('/', async (req, res) => {
 // 모든 방 데이터 가져오기
 router.get('/', async (req, res) => {
   try {
-    const rooms = await Room.find();
-    res.json(rooms);
+    const rooms = await Room.find(); // 모든 방 가져오기
+    res.status(200).json(rooms);
   } catch (err) {
-    res.status(500).send('모든 방 데이터 가져오기 오류');
+    res.status(500).json({ error: '방 목록 가져오기 실패' });
   }
 });
 
@@ -56,5 +56,44 @@ router.get('/:id', async (req, res) => {
     res.status(500).send('특정 방 데이터 가져오기 오류');
   }
 });
+
+// 라운드 변경 라우트
+router.patch('/:id', async (req, res) => {
+  const { round } = req.body; // 클라이언트에서 round 값 전달
+  try {
+    const room = await Room.findOneAndUpdate(
+      { room_id: req.params.id },
+      { round },
+      { new: true } // 업데이트된 결과 반환
+    );
+    if (room) {
+      res.status(200).json(room); // 업데이트 성공 시 room 정보 반환
+    } else {
+      res.status(404).send('Room not found');
+    }
+  } catch (err) {
+    res.status(500).send('Error updating round');
+  }
+});
+
+// 채팅 메시지 추가 라우트
+router.patch('/:id/chat', async (req, res) => {
+  const { chat_room } = req.body; // 클라이언트에서 chat_room 배열 전달
+  try {
+    const room = await Room.findOne({ room_id: req.params.id }); // 방 찾기
+    if (room) {
+      room.chat_room.push(chat_room); // 기존 메시지 배열에 추가
+      await room.save(); // 저장
+      res.status(200).json(room);
+    } else {
+      res.status(404).send('Room not found');
+    }
+  } catch (err) {
+    res.status(500).send('Error updating chat messages');
+  }
+});
+
+
+
 
 module.exports = router;
