@@ -10,6 +10,7 @@ import QuizGame from "./QuizGame";
 import Login from "./Login";
 import { authStore } from "./store/AuthStore";
 import { getMe } from "./apis/auth";
+import axios from 'axios';
 
 const App = () => {
   const { user, setUser, loggedIn } = authStore();
