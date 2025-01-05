@@ -1,16 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const cookieSession = require('cookie-session');
-const connectDB = require('./config/db');
-const authRoutes = require('./routes/auth');
-const roomRoutes = require('./routes/rooms');
-const corsMiddleware = require('./middleware/cors');
-const Room = require('./models/Room');
+require("dotenv").config();
+const express = require("express");
+const cookieSession = require("cookie-session");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/auth");
+const roomRoutes = require("./routes/rooms");
+const corsMiddleware = require("./middleware/cors.middleware");
+const Room = require("./models/Room");
 
-connectDB(); // MongoDB 연결
-Room.find()
-  .then(rooms => console.log('Fetched rooms during startup:', rooms))
-  .catch(err => console.error('Error during Room.find():', err));
 const app = express();
 
 // MongoDB 연결
@@ -19,31 +16,32 @@ connectDB();
 // 미들웨어 설정
 app.use(corsMiddleware);
 app.use(express.json());
+app.use(cookieParser());
 app.use(
   cookieSession({
-    name: 'session',
-    keys: ['secretKey'],
+    name: "session",
+    keys: ["secretKey"],
     maxAge: 24 * 60 * 60 * 1000,
   })
 );
 
 // 라우트 설정
-app.use('/auth', authRoutes);
-app.use('/rooms', roomRoutes);
+app.use("/auth", authRoutes);
+app.use("/rooms", roomRoutes);
 
 // 기본 라우트 추가
 //app.get('/', (req, res) => {
 //  res.send('Hello, World! This is the home page.');
 //});
 // 기본 라우트에서 Room 데이터 출력
-app.get('/', async (req, res) => {
+app.get("/", async (req, res) => {
   try {
     const rooms = await Room.find(); // Atlas에서 모든 Room 데이터 가져옴
-    console.log('Fetched rooms:', rooms); // 터미널에 로그 출력
+    console.log("Fetched rooms:", rooms); // 터미널에 로그 출력
     res.json(rooms); // JSON 형식으로 브라우저에 응답
   } catch (err) {
-    console.error('❌ Error fetching rooms:', err);
-    res.status(500).send('❌ Error fetching rooms');
+    console.error("❌ Error fetching rooms:", err);
+    res.status(500).send("❌ Error fetching rooms");
   }
 });
 

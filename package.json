@@ -9,12 +9,14 @@
     "cors": "^2.8.5",
     "cra-template": "1.2.0",
     "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.1",
     "react-scripts": "5.0.1",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "zustand": "^5.0.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -39,5 +41,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "rimraf": "^6.0.1"
   }
 }
