@@ -16,6 +16,27 @@ const QuizGame = ({ room }) => {
 
   const timelimit = room.time * 1000; // 한 라운드 전체 시간 (밀리초)
 
+  const typeTranslations = {
+    normal: "노말",
+    fire: "불꽃",
+    water: "물",
+    grass: "풀",
+    electric: "전기",
+    ice: "얼음",
+    fighting: "격투",
+    poison: "독",
+    ground: "땅",
+    flying: "비행",
+    psychic: "에스퍼",
+    bug: "벌레",
+    rock: "바위",
+    ghost: "고스트",
+    dark: "악",
+    dragon: "드래곤",
+    steel: "강철",
+    fairy: "페어리",
+  };
+
   // 방의 라운드와 채팅DB 불러오기
   const fetchRoomData = async () => {
     try {
@@ -39,17 +60,27 @@ const QuizGame = ({ room }) => {
 
       const imageUrl = pokemonData.sprites.other['official-artwork'].front_default || pokemonData.sprites.front_default;
       const koreanName = speciesData.names.find((name) => name.language.name === 'ko')?.name || pokemonData.name;
-      const type = pokemonData.types.map((t) => t.type.name).join('/');
-      const generation = Math.ceil(randomId / 151);
+      const type = pokemonData.types.map((t) => {
+        const typeName = typeTranslations[t.type.name] || t.type.name; // 영어 → 한글 변환
+        return { typeName };
+      });
+      const generation = speciesData.generation.url.split("/").slice(-2, -1)[0].replace("generation-", "");
       const nameLength = koreanName.length;
 
       const extractedColors = await extractDominantColors(imageUrl);
 
       setHints([
-        { label: "색1/색2", value: extractedColors.slice(0, 2) },
-        { label: "색3", value: extractedColors[2] },
+        { label: "색1/2/3", value: extractedColors},
         { label: "세대", value: `${generation}세대` },
-        { label: "타입", value: type },
+        {
+          label: "타입",
+          value: type.map((t) => (
+            <div key={t.typeName} className="type-hint">
+              {t.typeIcon && <img src={t.typeIcon} alt={t.typeName} className="type-icon" />}
+              <span>{t.typeName}</span>
+            </div>
+          )),
+        },
         { label: "글자수", value: `${nameLength} 글자` },
         { label: "실루엣", value: createSilhouette(imageUrl) },
         { label: "픽셀화", value: createPixelatedImage(imageUrl) }
@@ -69,26 +100,86 @@ const QuizGame = ({ room }) => {
   const extractDominantColors = async (imageUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = 'anonymous'; // 크로스오리진 설정
       img.src = imageUrl;
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = 50;
-        canvas.height = 50;
-        ctx.drawImage(img, 0, 0, 50, 50);
-        const pixels = ctx.getImageData(0, 0, 50, 50).data;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        // 1. **가장자리 색상 평균 계산** (배경 색상 추출)
+        const edgeColors = [];
+        for (let y = 0; y < canvas.height; y++) {
+          edgeColors.push(getPixel(pixels, canvas.width, 0, y)); // 왼쪽
+          edgeColors.push(getPixel(pixels, canvas.width, canvas.width - 1, y)); // 오른쪽
+        }
+        for (let x = 0; x < canvas.width; x++) {
+          edgeColors.push(getPixel(pixels, canvas.width, x, 0)); // 상단
+          edgeColors.push(getPixel(pixels, canvas.width, x, canvas.height - 1)); // 하단
+        }
+        const backgroundColor = averageColor(edgeColors); // 가장자리 색상 평균 계산
+
         const colorCount = {};
         for (let i = 0; i < pixels.length; i += 4) {
-          const [r, g, b] = pixels.slice(i, i + 3);
-          const rgb = `rgb(${r},${g},${b})`;
-          colorCount[rgb] = (colorCount[rgb] || 0) + 1;
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const a = pixels[i + 3]; // 알파 값
+
+          if (a < 200) continue; // 투명 픽셀 무시
+          const rgb = [r, g, b];
+
+          // 2. 배경색과 유사한 픽셀은 무시
+          if (isSimilarColor(rgb, backgroundColor)) continue;
+
+          const quantizedColor = quantizeColor(rgb, 16); // 색상 군집화
+          const rgbString = `rgb(${quantizedColor.join(",")})`;
+          colorCount[rgbString] = (colorCount[rgbString] || 0) + 1;
         }
+
         const sortedColors = Object.entries(colorCount).sort((a, b) => b[1] - a[1]);
-        resolve(sortedColors.map(([color]) => color).slice(0, 3));
+        resolve(sortedColors.slice(0, 3).map(([color]) => color)); // 상위 3개 색상 반환
       };
     });
   };
+
+  // Helper 함수들
+  const getPixel = (pixels, width, x, y) => {
+    const idx = (y * width + x) * 4;
+    return [pixels[idx], pixels[idx + 1], pixels[idx + 2]]; // RGB 값 반환
+  };
+
+  const averageColor = (colors) => {
+    const avg = colors.reduce((acc, color) => {
+      acc[0] += color[0];
+      acc[1] += color[1];
+      acc[2] += color[2];
+      return acc;
+    }, [0, 0, 0]).map((sum) => Math.round(sum / colors.length));
+    return avg; // 평균 RGB 값 반환
+  };
+
+  const isSimilarColor = (color1, color2, threshold = 100) => {
+    // RGB 값 간 차이가 threshold 이내면 유사 색상으로 간주
+    return (
+      Math.abs(color1[0] - color2[0]) < threshold &&
+      Math.abs(color1[1] - color2[1]) < threshold &&
+      Math.abs(color1[2] - color2[2]) < threshold
+    );
+  };
+
+  const quantizeColor = (color, step) => {
+    // RGB 값을 일정 단계로 양자화
+    return color.map((c) => Math.round(c / step) * step);
+  };
+
+
+
+
 
   // 라운드 증가 및 저장
   const updateRoundInDB = async () => {
@@ -192,13 +283,13 @@ const QuizGame = ({ room }) => {
               ></div>
             </div>
               <div className="progress-labels">
-              <span>색1/2</span>
-              <span>색3</span>
+              <span>색1/2/3</span>
               <span>세대</span>
               <span>타입</span>
               <span>글자수</span>
               <span>실루엣</span>
               <span>픽셀화</span>
+              <span></span>
               <span></span>
             </div>
           </div>
@@ -216,16 +307,21 @@ const QuizGame = ({ room }) => {
                   >
                     <strong>{hint.label}</strong>
                     <div className="hint-content">
-                      {Array.isArray(hint.value) ? (
+                      {/* 색1/2/3을 한 번에 표시 */}
+                      {hint.label === "색1/2/3" ? (
                         <div className="color-bubbles">
                           {hint.value.map((color, i) => (
-                            <div key={i} className="color-circle" style={{ backgroundColor: color }}></div>
+                            <div
+                              key={i}
+                              className="color-circle"
+                              style={{ backgroundColor: color }}
+                            ></div>
                           ))}
                         </div>
                       ) : typeof hint.value === 'string' && hint.value.startsWith('http') ? (
                         <img src={hint.value} alt={hint.label} className="hint-image" />
                       ) : (
-                        <span>{hint.value}</span>
+                        <span>{hint.value}</span> // 일반 텍스트 힌트는 텍스트로 표시
                       )}
                     </div>
                   </div>
@@ -234,6 +330,22 @@ const QuizGame = ({ room }) => {
             )}
           </div>
 
+
+          {/* 채팅창 */}
+          <div className="chat-container">
+            <div className="chat-messages">
+              {chatMessages.map((message, index) => (
+                <p key={index}>{message}</p>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="채팅을 입력해주세요."
+              className="chat-input"
+              ref={inputRef}
+              onKeyDown={handleSendMessage}
+            />
+          </div>
         </div>
 
         {/* 오른쪽 프로필 리스트 */}
@@ -248,21 +360,7 @@ const QuizGame = ({ room }) => {
         </div>
       </div>
 
-      {/* 채팅창 */}
-      <div className="chat-container">
-        <div className="chat-messages">
-          {chatMessages.map((message, index) => (
-            <p key={index}>{message}</p>
-          ))}
-        </div>
-        <input
-          type="text"
-          placeholder="채팅을 입력해주세요."
-          className="chat-input"
-          ref={inputRef}
-          onKeyDown={handleSendMessage}
-        />
-      </div>
+      
     </div>
   )};
 
