@@ -107,7 +107,7 @@ router.get("/kakao/callback", async (req, res) => {
       await userService.createUser({
         social_id: userResponse.data.id,
         nickname: userResponse?.data?.properties?.nickname || null,
-        email: userResponse?.data?.kakao_account?.email || null,
+        email: userResponse?.data?.kakao_account?.email || null,        
       });
     } else {
       await userService.updateUser({
