@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/db"); // 옵션 제거
+    await mongoose.connect("mongodb+srv://suelim:nimoos_9001@phdpokemon.zkinz.mongodb.net/testdb"); // 옵션 제거
     console.log("✅ Connected to MongoDB");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
