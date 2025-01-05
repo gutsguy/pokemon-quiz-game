@@ -2,11 +2,8 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb://localhost:27017/RoomDB', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ Connected to MongoDB');
+    await mongoose.connect('mongodb://localhost:27017/RoomDB');
+    console.log('✅ db.js Connected to MongoDB');
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1); // 연결 실패 시 프로세스 종료

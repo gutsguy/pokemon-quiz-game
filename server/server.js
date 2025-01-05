@@ -13,8 +13,6 @@ Room.find()
   .catch(err => console.error('Error during Room.find():', err));
 const app = express();
 
-// MongoDB 연결
-connectDB();
 
 // 미들웨어 설정
 app.use(corsMiddleware);

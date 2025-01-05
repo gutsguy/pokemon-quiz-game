@@ -193,3 +193,22 @@ body {
   width: 300px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
+
+.room-item {
+  padding: 15px;
+  margin: 10px 0;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  transition: background-color 0.3s ease;
+}
+
+
+.room-item p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+}

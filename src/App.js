@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Lobby from './Lobby';
 import QuizGame from './QuizGame';
 import Login from './Login';
+import axios from 'axios';
 
 const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 기본값 false
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // 기본값 false
   const [rooms, setRooms] = useState([]); // 방 목록
   const [selectedRoom, setSelectedRoom] = useState(null); // 선택한 방 정보
 
@@ -14,15 +15,37 @@ const App = () => {
     setIsLoggedIn(true); // 로그인 성공 시 상태 변경
   };
 
-  const handleCreateRoom = (roomData) => {
-    const newRoom = { id: rooms.length + 1, ...roomData }; // 방 ID 생성 및 정보 저장
-    setRooms((prevRooms) => [...prevRooms, newRoom]);
+  // 방 목록 로드
+  const fetchRooms = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/rooms');
+      console.log('방 목록 응답:', response.data); // 응답 로그 출력
+      setRooms(response.data); // 방 목록 상태 업데이트
+    } catch (error) {
+      console.error('방 목록 불러오기 실패:', error);
+    }
+  };
+
+  const handleCreateRoom = async (roomData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/rooms', roomData);
+      const newRoom = response.data; // 생성된 방 정보
+      setRooms((prevRooms) => [...prevRooms, newRoom]); // 방 목록에 추가
+    } catch (error) {
+      console.error('handleCreateRoom 오류:', error);
+    }
   };
 
   const handleJoinRoom = (roomId) => {
-    const room = rooms.find((room) => room.id === roomId);
-    if (room) setSelectedRoom(room); // 방 정보 설정
+    const room = rooms.find((room) => room.room_id === roomId);
+    if (room) setSelectedRoom(room); // 선택한 방 상태 설정
   };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchRooms(); // 로그인 상태일 때만 방 목록 불러오기
+    }
+  }, [isLoggedIn]);
 
   return (
     <Router>
