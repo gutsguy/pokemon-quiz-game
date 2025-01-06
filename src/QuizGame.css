@@ -51,7 +51,6 @@
     0% {
         width: 0%;
     }
-
     100% {
         width: 100%;
     }
@@ -62,6 +61,7 @@
     justify-content: space-between;
     margin-top: 5px;
     font-size: 12px;
+    margin-left: -20px;
 }
 
 .game-display-container {
@@ -224,4 +224,23 @@
     width: 100px;
     height: 100px;
     object-fit: contain;
+}
+
+.answer-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.pokemon-image-large {
+    width: 200px;
+    height: 200px;
+}
+
+.pokemon-name {
+    font-size: 32px;
+    font-weight: bold;
 }

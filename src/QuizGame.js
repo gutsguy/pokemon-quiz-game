@@ -6,6 +6,11 @@ const QuizGame = ({ room }) => {
   const [pokemonImage, setPokemonImage] = useState(null);
   const [pokemonName, setPokemonName] = useState('');
   const [hints, setHints] = useState([]);
+  const [showAnswer, setShowAnswer] = useState(false); // 정답 화면 여부
+  const [countdown, setCountdown] = useState(null); // 5초 카운트다운 상태
+  const [isGameStarted, setIsGameStarted] = useState(false); // 게임 시작 여부
+  const [currentPokemon, setCurrentPokemon] = useState(null); // 현재 포켓몬 데이터
+  const [progress, setProgress] = useState(0); // 프로그레스 바 상태
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [round, setRound] = useState(room.round);
@@ -37,26 +42,37 @@ const QuizGame = ({ room }) => {
     fairy: "페어리",
   };
 
-  // 방의 라운드와 채팅DB 불러오기
-  const fetchRoomData = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/rooms/${room.room_id}`);
-      setRound(response.data.round); // 최신 round 불러오기
-      setChatMessages(response.data.chat_room || []); // 최신 채팅 불러오기
-    } catch (error) {
-      console.error('Error fetching room data:', error);
-    }
+  const generationRanges = {
+    1: [1, 151],
+    2: [152, 251],
+    3: [252, 386],
+    4: [387, 493],
+    5: [494, 649],
+    6: [650, 721],
+    7: [722, 809],
+    8: [810, 905],
+    9: [906, 1010],
   };
 
   const fetchRandomPokemon = async () => {
     setIsLoading(true);
-    const randomId = Math.floor(Math.random() * 1010) + 1;
     
+    // 사용자가 선택한 세대 가져오기
+    const generations = room.generation;
+    const genIndex = Math.floor(Math.random() * generations.length);
+    const selectedGen = generations[genIndex];
+
+    const [startId, endId] = generationRanges[selectedGen];
+    const randomId = Math.floor(Math.random() * (endId - startId + 1)) + startId;
     try {
+      console.log(`랜덤 포켓몬 ID: ${randomId}`);
       const pokemonResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
       const pokemonData = await pokemonResponse.data;
       const speciesResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${randomId}`);
       const speciesData = await speciesResponse.data;
+
+      console.log("포켓몬 데이터:", pokemonData); // 🔥 API 응답 확인
+      console.log("포켓몬 종 데이터:", speciesData);
 
       const imageUrl = pokemonData.sprites.other['official-artwork'].front_default || pokemonData.sprites.front_default;
       const koreanName = speciesData.names.find((name) => name.language.name === 'ko')?.name || pokemonData.name;
@@ -90,7 +106,8 @@ const QuizGame = ({ room }) => {
       setPokemonImage(imageUrl);
       setPokemonName(koreanName);
       setIsLoading(false);
-      startHintSequence();
+
+      return { imageUrl, koreanName, hints: [...hints] };
     } catch (error) {
       console.error("Error fetching Pokemon data:", error);
       setIsLoading(false);
@@ -178,20 +195,6 @@ const QuizGame = ({ room }) => {
   };
 
 
-
-
-
-  // 라운드 증가 및 저장
-  const updateRoundInDB = async () => {
-    try {
-      const newRound = round + 1;
-      await axios.patch(`http://localhost:5000/rooms/${room.room_id}`, { round: newRound });
-      setRound(newRound); // 화면 업데이트
-    } catch (error) {
-      console.error('Error updating round in DB:', error);
-    }
-  };
-
   const createSilhouette = (imageUrl) => {
     return imageUrl; // 이미지 URL 사용, CSS로 검정 실루엣 스타일링 가능
   };
@@ -203,32 +206,86 @@ const QuizGame = ({ room }) => {
   const startHintSequence = () => {
     let index = 0;
     const intervalTime = timelimit / 7; // 힌트 노출 간격
-    setCurrentHintIndex(0); // 초기화
+    const progressIntervalTime = timelimit / 1000; // 프로그레스 바 업데이트 주기
+    let progressValue = 0; // 프로그레스 바 초기화
 
+    setProgress(0); // 프로그레스 바 0%로 초기화
     clearInterval(hintInterval.current); // 중복 실행 방지
+
+    // 힌트 시퀀스 시작
     hintInterval.current = setInterval(() => {
       setCurrentHintIndex((prevIndex) => prevIndex + 1);
       index++;
+
       if (index >= 7) {
         clearInterval(hintInterval.current); // 모든 힌트 출력 후 정리
+        showAnswerScreen(); // 정답 화면 표시
       }
     }, intervalTime);
+
+    // 프로그레스 바 업데이트
+    const progressInterval = setInterval(() => {
+      progressValue += 0.1; // 1%씩 증가
+      setProgress(progressValue); // 프로그레스 바 업데이트
+
+      if (progressValue >= 100) {
+        clearInterval(progressInterval); // 100%에 도달하면 멈춤
+      }
+    }, progressIntervalTime);
   };
 
-  const startNextRound = () => {
-    updateRoundInDB(); // 라운드 끝날 때 DB에 저장 및 업데이트
-    fetchRandomPokemon(); // 다음 포켓몬 가져오기
+  const showAnswerScreen = () => {
+    setShowAnswer(true); // 🔥 정답 화면 표시
+    setTimeout(() => {
+      setShowAnswer(false); // 5초 후 정답 화면 숨김
+      setCurrentHintIndex(0); // 힌트 인덱스 초기화
+      startNextRound(); // 🔥 다음 라운드 시작
+    }, 5000); // 5초 동안 정답 화면을 표시
+  };
+
+  const startNextRound = async() => {
+    setShowAnswer(false); // 정답 화면 숨김
+    setCountdown(3); // 카운트다운 시작
+
+    console.log("카운트다운 시작");
+    const nextPokemon = await fetchRandomPokemon();
+
+    if (nextPokemon) {
+      console.log("포켓몬 로드 완료:", nextPokemon.koreanName);
+    } else {
+      console.error("포켓몬 데이터를 로드하지 못했습니다.");
+    }
+
+    // 3초 동안 카운트다운
+    const countdownInterval = setInterval(() => {
+      setCountdown((prevCountdown) => {
+        if (prevCountdown === 1) {
+          clearInterval(countdownInterval); // 카운트다운 종료
+          setCountdown(null); // 카운트다운 숨김
+
+          if (nextPokemon) {
+            setCurrentPokemon(nextPokemon); // 포켓몬 데이터 설정
+            setCurrentHintIndex(0); // 힌트 초기화
+            startHintSequence(); // 힌트 시퀀스 시작
+          } else {
+            console.error("Failed to load Pokemon data");
+          }
+        }
+        return prevCountdown - 1;
+      });
+    }, 1000);
   };
 
   useEffect(() => {
-    fetchRoomData(); // 컴포넌트가 마운트될 때 방 데이터 불러오기
-    fetchRandomPokemon(); // 첫 번째 포켓몬 로드
-    roundTimeout.current = setInterval(startNextRound, timelimit); // 라운드마다 포켓몬 변경
+    if (isGameStarted) {
+      startNextRound(); // 게임이 시작되면 첫 라운드 실행
+    }
+
     return () => {
-      clearInterval(hintInterval.current);
-      clearInterval(roundTimeout.current); // 컴포넌트 언마운트 시 타이머 정리
+      clearInterval(hintInterval.current); // 컴포넌트 언마운트 시 힌트 타이머 클리어
+      clearTimeout(roundTimeout.current); // 라운드 종료 타이머 클리어
     };
-  }, [room.room_id]); // room 변경 시 새 라운드 시작
+  }, [isGameStarted]);
 
   // 채팅 전송 및 업데이트
   const handleSendMessage = async (e) => {
@@ -239,7 +296,6 @@ const QuizGame = ({ room }) => {
         await axios.patch(`http://localhost:5000/rooms/${room.room_id}/chat`, {
           chat_room: newMessage,
         });
-        fetchRoomData(); // 채팅 업데이트 후 최신 채팅 불러오기
         inputRef.current.value = ''; // 입력창 초기화
       } catch (error) {
         console.error('Error sending chat message:', error);
@@ -268,17 +324,14 @@ const QuizGame = ({ room }) => {
           ))}
         </div>
 
-        {/* 문제 화면 */}
         <div className="game-content">
-          {/* 게이지바 부분 */}
           <div className="progress-bar-container">
             <div className="progress-bar">
               <div
                 className="progress-fill"
                 style={{
-                  width: `${((currentHintIndex + 1) / hints.length) * 100}%`,
-                  transition: 'width 0.5s ease',
-                  animationDuration: `${room.time}s`
+                  width: `${progress}%`,
+                  transition: 'width linear'
                 }}
               ></div>
             </div>
@@ -295,10 +348,22 @@ const QuizGame = ({ room }) => {
           </div>
 
           <div className="game-display">
-            {/* 힌트 표시 */}
-            {isLoading ? (
-              <p className="loading-text">로딩 중...</p>
-            ) : (
+            {!isGameStarted ? (
+              <div className="start-button-container">
+              <button className="start-button" onClick={() => setIsGameStarted(true)}>
+                게임 시작
+              </button>
+            </div>
+            ) : countdown !== null ? (
+              <div className="countdown">
+                <h1>{countdown}</h1>
+              </div>
+              ) : showAnswer ? (
+                <div className="answer-display">
+                  <h1 className="pokemon-name">{pokemonName}</h1>
+                  <img className="pokemon-image-large" src={pokemonImage} alt={pokemonName} />
+                </div>
+              ) : (
               <div className="hint-row">
                 {hints.map((hint, index) => (
                   <div
