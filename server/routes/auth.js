@@ -107,8 +107,16 @@ router.get("/kakao/callback", async (req, res) => {
       await userService.createUser({
         social_id: userResponse.data.id,
         nickname: userResponse?.data?.properties?.nickname || null,
-        email: userResponse?.data?.kakao_account?.email || null,        
+        email: userResponse?.data?.kakao_account?.email || null,
+        rank: 0,
+        picture : "", 
+        highscore: 0, 
+        total_15: 0, // 누적 전체 시도
+        total_30: 0,
+        correct_15 : 0,
+        correct_30 : 0,
       });
+  
     } else {
       await userService.updateUser({
         social_id: userResponse.data.id,
