@@ -226,6 +226,12 @@
     object-fit: contain;
 }
 
+.correct-answer {
+    color: #800080;
+    /* 보라색 */
+    font-weight: bold;
+}
+
 .answer-display {
     display: flex;
     flex-direction: column;
@@ -243,4 +249,43 @@
 .pokemon-name {
     font-size: 32px;
     font-weight: bold;
+}
+
+
+.pixelated-effect {
+    width: 100px;
+    /* 고정된 크기 */
+    height: 100px;
+}
+
+.result-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.result-popup h2 {
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.result-popup button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+.result-popup button:hover {
+    background-color: #0056b3;
 }

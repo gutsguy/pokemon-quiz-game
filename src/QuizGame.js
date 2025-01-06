@@ -12,9 +12,10 @@ const QuizGame = ({ room }) => {
   const [currentPokemon, setCurrentPokemon] = useState(null); // 현재 포켓몬 데이터
   const [progress, setProgress] = useState(0); // 프로그레스 바 상태
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [round, setRound] = useState(room.round);
+  const [round, setRound] = useState(0);
   const [chatMessages, setChatMessages] = useState([]);
+  const [correctAnswers, setCorrectAnswers] = useState(0);  // 맞춘 문제 수
+  const [showResult, setShowResult] = useState(false);  // 결과 팝업 여부
   const inputRef = useRef();
   const hintInterval = useRef(null);
   const roundTimeout = useRef(null);
@@ -55,8 +56,6 @@ const QuizGame = ({ room }) => {
   };
 
   const fetchRandomPokemon = async () => {
-    setIsLoading(true);
-    
     // 사용자가 선택한 세대 가져오기
     const generations = room.generation;
     const genIndex = Math.floor(Math.random() * generations.length);
@@ -71,7 +70,7 @@ const QuizGame = ({ room }) => {
       const speciesResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${randomId}`);
       const speciesData = await speciesResponse.data;
 
-      console.log("포켓몬 데이터:", pokemonData); // 🔥 API 응답 확인
+      console.log("포켓몬 데이터:", pokemonData);
       console.log("포켓몬 종 데이터:", speciesData);
 
       const imageUrl = pokemonData.sprites.other['official-artwork'].front_default || pokemonData.sprites.front_default;
@@ -84,6 +83,8 @@ const QuizGame = ({ room }) => {
       const nameLength = koreanName.length;
 
       const extractedColors = await extractDominantColors(imageUrl);
+      const silhouetteImage = await createSilhouette(imageUrl);
+      const pixelatedImage = await createPixelatedImage(imageUrl);
 
       setHints([
         { label: "색1/2/3", value: extractedColors},
@@ -98,19 +99,19 @@ const QuizGame = ({ room }) => {
           )),
         },
         { label: "글자수", value: `${nameLength} 글자` },
-        { label: "실루엣", value: createSilhouette(imageUrl) },
-        { label: "픽셀화", value: createPixelatedImage(imageUrl) }
+        { label: "픽셀화", value: pixelatedImage },
+        { label: "실루엣", value: silhouetteImage }
 
       ]);
 
       setPokemonImage(imageUrl);
       setPokemonName(koreanName);
-      setIsLoading(false);
+
 
       return { imageUrl, koreanName, hints: [...hints] };
     } catch (error) {
       console.error("Error fetching Pokemon data:", error);
-      setIsLoading(false);
+
     }
   };
 
@@ -196,12 +197,65 @@ const QuizGame = ({ room }) => {
 
 
   const createSilhouette = (imageUrl) => {
-    return imageUrl; // 이미지 URL 사용, CSS로 검정 실루엣 스타일링 가능
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";  // 크로스오리진 문제 방지
+      img.src = imageUrl;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          const alpha = imageData.data[i + 3];  // 알파 채널 (투명도)
+          if (alpha > 50) {
+            imageData.data[i] = 0;   // R
+            imageData.data[i + 1] = 0; // G
+            imageData.data[i + 2] = 0; // B (검정색으로 설정)
+          } else {
+            imageData.data[i + 3] = 0;  // 투명하게 설정
+          }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        resolve(canvas.toDataURL());  // base64로 반환
+      };
+    });
   };
 
+
   const createPixelatedImage = (imageUrl) => {
-    return imageUrl; // 이미지 URL 사용, CSS로 픽셀화 필터 적용 가능
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageUrl;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const pixelSize = 32;  // 픽셀 크기 조정 (값을 키울수록 모자이크 심함)
+        canvas.width = img.width / pixelSize;
+        canvas.height = img.height / pixelSize;
+
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);  // 작은 해상도로 그림
+
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = img.width;
+        finalCanvas.height = img.height;
+        const finalCtx = finalCanvas.getContext("2d");
+        finalCtx.imageSmoothingEnabled = false;
+        finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);  // 확대하여 모자이크 효과
+
+        resolve(finalCanvas.toDataURL());  // base64 반환
+      };
+    });
   };
+
 
   const startHintSequence = () => {
     let index = 0;
@@ -235,18 +289,26 @@ const QuizGame = ({ room }) => {
   };
 
   const showAnswerScreen = () => {
-    setShowAnswer(true); // 🔥 정답 화면 표시
+    setShowAnswer(true); // 정답 화면 표시
     setTimeout(() => {
       setShowAnswer(false); // 5초 후 정답 화면 숨김
       setCurrentHintIndex(0); // 힌트 인덱스 초기화
-      startNextRound(); // 🔥 다음 라운드 시작
+      startNextRound(); // 다음 라운드 시작
     }, 5000); // 5초 동안 정답 화면을 표시
   };
 
   const startNextRound = async() => {
+    setRound((prevRound) => {
+      if (prevRound >= room.max_round) {
+        console.log("끝났어용");
+        setShowResult(true);  // 결과 팝업 표시
+        return;  // 라운드 증가 중지
+      }
+    });
     setShowAnswer(false); // 정답 화면 숨김
     setCountdown(3); // 카운트다운 시작
 
+    setRound((prevRound) => prevRound + 1);
     console.log("카운트다운 시작");
     const nextPokemon = await fetchRandomPokemon();
 
@@ -276,6 +338,18 @@ const QuizGame = ({ room }) => {
     }, 1000);
   };
 
+  const handleAnswer = (isCorrect) => {
+    if (isCorrect) {
+      setCorrectAnswers((prevCorrect) => prevCorrect + 1);  // 정답 맞춘 수 증가
+    }
+  };
+
+  const handleRestart = () => {
+    setRound(0);
+    setCorrectAnswers(0);
+    setShowResult(false);  // 게임 재시작
+  };
+
   useEffect(() => {
     if (isGameStarted) {
       startNextRound(); // 게임이 시작되면 첫 라운드 실행
@@ -288,17 +362,22 @@ const QuizGame = ({ room }) => {
   }, [isGameStarted]);
 
   // 채팅 전송 및 업데이트
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = (e) => {
     if (e.key === 'Enter' && inputRef.current.value.trim()) {
-      const newMessage = inputRef.current.value.trim();
+      const newMessage = inputRef.current.value.trim();  // 입력된 메시지
+      const isCorrectAnswer = newMessage === pokemonName;  // 정답 여부 확인
 
-      try {
-        await axios.patch(`http://localhost:5000/rooms/${room.room_id}/chat`, {
-          chat_room: newMessage,
-        });
-        inputRef.current.value = ''; // 입력창 초기화
-      } catch (error) {
-        console.error('Error sending chat message:', error);
+      const newChatMessage = {
+        text: newMessage,
+        isCorrect: isCorrectAnswer,  // 정답 여부 저장
+      };
+
+      setChatMessages((prevMessages) => [...prevMessages, newChatMessage]);  // 메시지 추가
+      inputRef.current.value = '';  // 입력창 초기화
+
+      if (isCorrectAnswer) {
+        setShowAnswer(true);  // 정답 화면 표시
+        console.log('정답입니다!');
       }
     }
   };
@@ -307,8 +386,7 @@ const QuizGame = ({ room }) => {
     <div className="game-container">
       <header className="room-info">
         <span>{room.room_name}</span>
-        <span>참가인원: {room.member_id.length}/{room.max_participants}</span>
-        <span>라운드 {room.round}/{room.max_round}</span>
+        <span>라운드 {round}/{room.max_round}</span>
         <span>제한 시간: {room.time}초</span>
       </header>
 
@@ -340,8 +418,8 @@ const QuizGame = ({ room }) => {
               <span>세대</span>
               <span>타입</span>
               <span>글자수</span>
-              <span>실루엣</span>
               <span>픽셀화</span>
+              <span>실루엣</span>
               <span></span>
               <span></span>
             </div>
@@ -372,7 +450,7 @@ const QuizGame = ({ room }) => {
                   >
                     <strong>{hint.label}</strong>
                     <div className="hint-content">
-                      {/* 색1/2/3을 한 번에 표시 */}
+                      {/* 색1/2/3 힌트 */}
                       {hint.label === "색1/2/3" ? (
                         <div className="color-bubbles">
                           {hint.value.map((color, i) => (
@@ -383,7 +461,19 @@ const QuizGame = ({ room }) => {
                             ></div>
                           ))}
                         </div>
-                      ) : typeof hint.value === 'string' && hint.value.startsWith('http') ? (
+                      ) : hint.label === "픽셀화" ? (
+                        <img
+                          src={hint.value}
+                          alt="픽셀화"
+                          className="hint-image pixelated-effect"
+                        />
+                      ) : hint.label === "실루엣" ? (
+                        <img
+                          src={hint.value}
+                          alt="실루엣"
+                          className="hint-image silhouette-effect"
+                        />
+                      ) : typeof hint.value === "string" && hint.value.startsWith("http") ? (
                         <img src={hint.value} alt={hint.label} className="hint-image" />
                       ) : (
                         <span>{hint.value}</span> // 일반 텍스트 힌트는 텍스트로 표시
@@ -391,6 +481,14 @@ const QuizGame = ({ room }) => {
                     </div>
                   </div>
                 ))}
+                      {/* 게임 종료 팝업 */}
+                      {showResult && (
+                        <div className="result-popup">
+                          <h2>게임 종료!</h2>
+                          <p>맞춘 문제 수: {correctAnswers} / {room.max_round}</p>
+                          <button onClick={handleRestart}>게임 다시 시작</button>
+                        </div>
+                      )}
               </div>
             )}
           </div>
@@ -400,7 +498,12 @@ const QuizGame = ({ room }) => {
           <div className="chat-container">
             <div className="chat-messages">
               {chatMessages.map((message, index) => (
-                <p key={index}>{message}</p>
+                <p
+                  key={index}
+                  className={`chat-message ${message.isCorrect ? 'correct-answer' : ''}`}  // 정답 메시지에 스타일 적용
+                >
+                  {message.text}  {/* text 속성만 렌더링 */}
+                </p>
               ))}
             </div>
             <input
