@@ -10,7 +10,7 @@ import QuizGame from "./QuizGame";
 import Login from "./Login";
 import { authStore } from "./store/AuthStore";
 import { getMe } from "./apis/auth";
-import axios from 'axios';
+import base from "./apis/_base";
 
 const App = () => {
   const { user, setUser, loggedIn } = authStore();
@@ -22,7 +22,7 @@ const App = () => {
   // 방 목록 로드
   const fetchRooms = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/rooms');
+      const response = await base.get('/rooms');
       console.log('방 목록 응답:', response.data); // 응답 로그 출력
       setRooms(response.data); // 방 목록 상태 업데이트
     } catch (error) {
@@ -32,7 +32,7 @@ const App = () => {
 
   const handleCreateRoom = async (roomData) => {
     try {
-      const response = await axios.post('http://localhost:5000/rooms', roomData);
+      const response = await base.post('/rooms', roomData);
       const newRoom = response.data; // 생성된 방 정보
       setRooms((prevRooms) => [...prevRooms, newRoom]); // 방 목록에 추가
     } catch (error) {
@@ -75,11 +75,11 @@ const App = () => {
             path="/lobby"
             element={
               loggedIn ? (
-                <Lobby 
+                <Lobby
                   rooms={rooms}
                   onCreateRoom={handleCreateRoom}
-                  onJoinRoom={handleJoinRoom} 
-                  />
+                  onJoinRoom={handleJoinRoom}
+                />
               ) : (
                 <Navigate to="/login" replace />
               )
