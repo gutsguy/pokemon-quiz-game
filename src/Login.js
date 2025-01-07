@@ -1,46 +1,53 @@
-import React from 'react';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import React from "react";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
-const Login = ({ onLoginSuccess }) => {
-  const handleGoogleSuccess = async (credentialResponse) => {
+const Login = () => {
+  const query = new URLSearchParams(window.location.search);
+  const handleGoogleSuccess = async credentialResponse => {
     try {
       // Decode the credential JWT to extract user info
-      const decodedCredential = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+      const decodedCredential = JSON.parse(
+        atob(credentialResponse.credential.split(".")[1])
+      );
       const userInfo = {
         name: decodedCredential.name,
         email: decodedCredential.email,
       };
 
-      console.log('Decoded User Info:', userInfo);
+      console.log("Decoded User Info:", userInfo);
 
       // Send the credential to the backend for further verification
-      const response = await fetch('http://localhost:5000/auth/google/callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ credential: credentialResponse.credential }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Backend Authentication Success:', data);
-        onLoginSuccess(userInfo); // Trigger the parent component's login success handler
+        console.log("Backend Authentication Success:", data);
       } else {
-        console.error('Backend Authentication Failed:', await response.text());
+        console.error("Backend Authentication Failed:", await response.text());
       }
     } catch (error) {
-      console.error('Error during Google Login:', error);
+      console.error("Error during Google Login:", error);
     }
   };
 
   const handleGoogleFailure = () => {
-    console.error('Google Login Failure');
+    console.error("Google Login Failure");
   };
 
   const handleKakaoLogin = () => {
-    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${process.env.REACT_APP_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.REACT_APP_KAKAO_REDIRECT_URI)}&response_type=code`;
-    window.location.href = kakaoAuthUrl; // Redirect to Kakao Auth URL
+    // 서버 로그인 URL로 리다이렉트
+    window.location.href = `${process.env.REACT_APP_API_URL}/auth/kakao?redirect=${
+      window.location.origin + (query.get("redirect") || "/")
+    }`;
   };
 
   return (
@@ -54,7 +61,9 @@ const Login = ({ onLoginSuccess }) => {
         />
         {/* Kakao Login */}
         <button onClick={handleKakaoLogin}>Login with Kakao</button>
-        <button onClick={() => console.log('Naver Login not implemented yet')}>Login with Naver</button>
+        <button onClick={() => console.log("Naver Login not implemented yet")}>
+          Login with Naver
+        </button>
       </div>
     </GoogleOAuthProvider>
   );

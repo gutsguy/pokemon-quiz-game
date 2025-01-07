@@ -1,14 +1,16 @@
-// server/models/Room.js
-const mongoose = require('mongoose');
-//방 정보
+const mongoose = require("mongoose");
+
 const userSchema = new mongoose.Schema({
-    user_id: String,
-    nickname: String,
-    picture: Image,
-    is_logged_in: Boolean,
-    total_try: Number, // 누적 전체 시도
-    highscore: Number, // 혼자 놀기 최고 점수
-    rank : Number // 누적 맞춘 문제 수
+  id: mongoose.Schema.Types.ObjectId,
+  social_id: String,
+  nickname: String,
+  total_15: Number, // 누적 전체 시도
+  total_30: Number,
+  correct_15 : Number,
+  correct_30 : Number,
+  highscore: Number, // 혼자 놀기 최고 점수
+  email: String,
+  picture: String,
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

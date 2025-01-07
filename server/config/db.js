@@ -1,18 +1,16 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb://localhost:27017/RoomDB');
-    console.log('✅ db.js Connected to MongoDB');
+    await mongoose.connect("mongodb://localhost:27017/roomDB"); // 옵션 제거
+    console.log("✅ Connected to MongoDB");
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
+    console.error("❌ MongoDB connection error:", err);
     process.exit(1); // 연결 실패 시 프로세스 종료
   }
 };
 
 module.exports = connectDB;
-
-
 
 /*const cors = require('cors'); // Mongoose 라이브러리 불러오기
 const mongoose = require('mongoose'); // mongoose 불러오기

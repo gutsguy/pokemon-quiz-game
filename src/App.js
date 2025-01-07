@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Lobby from './Lobby';
-import QuizGame from './QuizGame';
-import Login from './Login';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
+import Lobby from "./Lobby";
+import QuizGame from "./QuizGame";
+import Login from "./Login";
+import { authStore } from "./store/AuthStore";
+import { getMe } from "./apis/auth";
+import base from "./apis/_base";
 
 const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // 기본값 false
+  const { user, setUser, loggedIn } = authStore();
+  const [initialized, setInitialized] = useState(false);
   const [rooms, setRooms] = useState([]); // 방 목록
   const [selectedRoom, setSelectedRoom] = useState(null); // 선택한 방 정보
 
-  const handleLoginSuccess = (userInfo) => {
-    console.log('User logged in:', userInfo);
-    setIsLoggedIn(true); // 로그인 성공 시 상태 변경
-  };
 
   // 방 목록 로드
   const fetchRooms = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/rooms');
+      const response = await base.get('/rooms');
       console.log('방 목록 응답:', response.data); // 응답 로그 출력
       setRooms(response.data); // 방 목록 상태 업데이트
     } catch (error) {
@@ -28,7 +32,7 @@ const App = () => {
 
   const handleCreateRoom = async (roomData) => {
     try {
-      const response = await axios.post('http://localhost:5000/rooms', roomData);
+      const response = await base.post('/rooms', roomData);
       const newRoom = response.data; // 생성된 방 정보
       setRooms((prevRooms) => [...prevRooms, newRoom]); // 방 목록에 추가
     } catch (error) {
@@ -42,10 +46,20 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchRooms(); // 로그인 상태일 때만 방 목록 불러오기
+    if (!initialized) {
+      getMe()
+        .then(data => {
+          setUser(data);
+          setInitialized(true);
+          console.log("User Info:", data);
+        })
+        .catch(() => {
+          setInitialized(true);
+        });
     }
-  }, [isLoggedIn]);
+  }, []);
+
+  if (!initialized) return null;
 
   return (
     <Router>
@@ -54,20 +68,18 @@ const App = () => {
           {/* 로그인 화면 */}
           <Route
             path="/login"
-            element={
-              isLoggedIn ? (
-                <Navigate to="/lobby" replace />
-              ) : (
-                <Login onLoginSuccess={handleLoginSuccess} />
-              )
-            }
+            element={loggedIn ? <Navigate to="/lobby" replace /> : <Login />}
           />
           {/* 로비 화면 */}
           <Route
             path="/lobby"
             element={
-              isLoggedIn ? (
-                <Lobby rooms={rooms} onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} />
+              loggedIn ? (
+                <Lobby
+                  rooms={rooms}
+                  onCreateRoom={handleCreateRoom}
+                  onJoinRoom={handleJoinRoom}
+                />
               ) : (
                 <Navigate to="/login" replace />
               )

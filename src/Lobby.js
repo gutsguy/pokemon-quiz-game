@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import CreateRoomPopup from './CreateRoomPopup';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CreateRoomPopup from "./CreateRoomPopup";
 
 const Lobby = ({ rooms, onCreateRoom, onJoinRoom }) => {
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const navigate = useNavigate();
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const navigate = useNavigate();
 
     const handleRoomClick = (roomId) => {
         console.log(`방 클릭됨: ${roomId}`);
