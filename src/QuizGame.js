@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import './QuizGame.css';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { authStore } from "./store/AuthStore";
 
 const QuizGame = () => {
   const [pokemonImage, setPokemonImage] = useState(null);
@@ -23,6 +24,9 @@ const QuizGame = () => {
   const roundTimeout = useRef(null);
   const [gameConfig, setGameConfig] = useState(null);
   const { max_rounds = 0, time_limit = 0, selected_generations = [] } = gameConfig || {};
+
+  const { user } = authStore();
+  const userId = user?._id;
 
   const timelimit = time_limit * 1000; // 한 라운드 전체 시간 (밀리초)
 
@@ -68,14 +72,10 @@ const QuizGame = () => {
     const [startId, endId] = generationRanges[selectedGen];
     const randomId = Math.floor(Math.random() * (endId - startId + 1)) + startId;
     try {
-      console.log(`랜덤 포켓몬 ID: ${randomId}`);
       const pokemonResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
       const pokemonData = await pokemonResponse.data;
       const speciesResponse = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${randomId}`);
       const speciesData = await speciesResponse.data;
-
-      console.log("포켓몬 데이터:", pokemonData);
-      console.log("포켓몬 종 데이터:", speciesData);
 
       const imageUrl = pokemonData.sprites.other['official-artwork'].front_default || pokemonData.sprites.front_default;
       const koreanName = speciesData.names.find((name) => name.language.name === 'ko')?.name || pokemonData.name;
@@ -111,6 +111,7 @@ const QuizGame = () => {
       setPokemonImage(imageUrl);
       setPokemonName(koreanName);
 
+      console.log(`정답 포켓몬 : ${koreanName}`);
 
       return { imageUrl, koreanName, hints: [...hints] };
     } catch (error) {
@@ -318,7 +319,6 @@ const QuizGame = () => {
     setShowAnswer(false); // 정답 화면 숨김
     setCountdown(3); // 카운트다운 시작
     
-    console.log("카운트다운 시작");
     const nextPokemon = await fetchRandomPokemon();
 
     const field = time_limit === 30 ? 'total_30' : 'total_15';
@@ -409,13 +409,18 @@ const QuizGame = () => {
   };
 
   const updateUserStats = async (field) => {
+    const requestUrl = `http://172.10.7.78:5000/users/${userId}`;
+
     try {
-      await axios.patch('/users/stats', { field });
-      console.log(`${field} updated successfully`);
+      const response = await axios.patch(
+        requestUrl,
+        { field },         // 업데이트할 필드 전달
+        { withCredentials: true } // 쿠키 포함
+      );
     } catch (error) {
-      console.error(`Error updating ${field}:`, error);
     }
   };
+
   
   return (
     <div className="game-container">

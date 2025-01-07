@@ -81,7 +81,7 @@ router.get("/kakao/callback", async (req, res) => {
         httpOnly: true,
         domain: process.env.COOKIE_DOMAIN,
       })
-      .redirect(redirectMap.get(state) || "http://localhost:3000");
+      .redirect(redirectMap.get(state) || "http://172.10.7.78:3000");
   } catch (error) {
     console.error(
       "Kakao Authentication Error:",

@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const corsMiddleware = require("./middleware/cors.middleware");
 const User = require("./models/User");
+const mongoose = require('mongoose');
 
 const app = express();
 
@@ -25,20 +26,28 @@ app.use(
   })
 );
 
+mongoose.connection.on('error', err => console.error('MongoDB Connection Error:', err));
+mongoose.connection.on('connected', () => console.log('✅✅✅✅ Connected to MongoDB'));
+
+
 // 라우트 설정
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 
 
-// 기본 라우트에서 Room 데이터 출력
+app.use((req, res, next) => {
+  console.log(`Request received: ${req.method} ${req.url}`);
+  next();
+});
+
+
 app.get("/", async (req, res) => {
   try {
-    const users = await User.find(); // Atlas에서 모든 Room 데이터 가져옴
-    console.log("user DB:", users); // 터미널에 로그 출력
-    res.json(users); // JSON 형식으로 브라우저에 응답
+    const users = await User.find();
+    res.json(users);
   } catch (err) {
-    console.error("❌ Error fetching users:", err);
-    res.status(500).send("❌ Error fetching users");
+    console.error("Error fetching users:", err);
+    res.status(500).send("Error fetching users");
   }
 });
 
