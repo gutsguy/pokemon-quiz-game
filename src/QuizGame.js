@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './QuizGame.css';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-const QuizGame = ({ room }) => {
+const QuizGame = () => {
   const [pokemonImage, setPokemonImage] = useState(null);
   const [pokemonName, setPokemonName] = useState('');
   const [hints, setHints] = useState([]);
@@ -18,9 +19,12 @@ const QuizGame = ({ room }) => {
   const [showResult, setShowResult] = useState(false);  // 결과 팝업 여부
   const inputRef = useRef();
   const hintInterval = useRef(null);
+  const progressInterval = useRef(null);
   const roundTimeout = useRef(null);
+  const [gameConfig, setGameConfig] = useState(null);
+  const { max_rounds = 0, time_limit = 0, selected_generations = [] } = gameConfig || {};
 
-  const timelimit = room.time * 1000; // 한 라운드 전체 시간 (밀리초)
+  const timelimit = time_limit * 1000; // 한 라운드 전체 시간 (밀리초)
 
   const typeTranslations = {
     normal: "노말",
@@ -57,7 +61,7 @@ const QuizGame = ({ room }) => {
 
   const fetchRandomPokemon = async () => {
     // 사용자가 선택한 세대 가져오기
-    const generations = room.generation;
+    const generations = selected_generations;
     const genIndex = Math.floor(Math.random() * generations.length);
     const selectedGen = generations[genIndex];
 
@@ -262,7 +266,10 @@ const QuizGame = ({ room }) => {
     let progressValue = 0; // 프로그레스 바 초기화
 
     setProgress(0); // 프로그레스 바 0%로 초기화
-    clearInterval(hintInterval.current); // 중복 실행 방지
+    clearInterval(hintInterval.current);
+    hintInterval.current = null; // 중복 실행 방지
+    clearInterval(progressInterval.current);
+    progressInterval.current = null;
 
     // 힌트 시퀀스 시작
     hintInterval.current = setInterval(() => {
@@ -276,12 +283,12 @@ const QuizGame = ({ room }) => {
     }, intervalTime);
 
     // 프로그레스 바 업데이트
-    const progressInterval = setInterval(() => {
+    progressInterval.current = setInterval(() => {
       progressValue += 0.1; // 1%씩 증가
       setProgress(progressValue); // 프로그레스 바 업데이트
 
-      if (progressValue >= 100) {
-        clearInterval(progressInterval); // 100%에 도달하면 멈춤
+      if (progress >= 100) {
+        clearInterval(progressInterval.current); // 100%에 도달하면 멈춤
       }
     }, progressIntervalTime);
   };
@@ -297,13 +304,14 @@ const QuizGame = ({ room }) => {
 
   const startNextRound = async() => {
     setRound((prevRound) => {
-      if (prevRound + 1 > room.max_round) {
+      if (prevRound + 1 > max_rounds) {
         console.log("끝났어용");
         setShowResult(true);  // 결과 팝업 표시
         setCountdown(null);  // 카운트다운 중단
         setShowAnswer(false);  // 정답 화면 숨김
         return prevRound;  // 라운드 증가 중지
       }
+      
       return prevRound + 1;  // 라운드 증가
     });
     
@@ -313,11 +321,8 @@ const QuizGame = ({ room }) => {
     console.log("카운트다운 시작");
     const nextPokemon = await fetchRandomPokemon();
 
-    if (nextPokemon) {
-      console.log("포켓몬 로드 완료:", nextPokemon.koreanName);
-    } else {
-      console.error("포켓몬 데이터를 로드하지 못했습니다.");
-    }
+    const field = time_limit === 30 ? 'total_30' : 'total_15';
+    await updateUserStats(field);
 
     // 3초 동안 카운트다운
     const countdownInterval = setInterval(() => {
@@ -339,11 +344,7 @@ const QuizGame = ({ room }) => {
     }, 1000);
   };
 
-  const handleAnswer = (isCorrect) => {
-    if (isCorrect) {
-      setCorrectAnswers((prevCorrect) => prevCorrect + 1);  // 정답 맞춘 수 증가
-    }
-  };
+
 
   const handleRestart = () => {
     setRound(0);
@@ -352,6 +353,13 @@ const QuizGame = ({ room }) => {
   };
 
   useEffect(() => {
+    const storedConfig = localStorage.getItem('gameConfig');; // localStorage에서 가져오기
+    if (storedConfig) {
+      const parsedConfig = JSON.parse(storedConfig);  // JSON 데이터를 객체로 변환
+      setGameConfig(parsedConfig);
+    } else {
+      console.error('게임 설정을 불러오지 못했습니다.');
+    }
     if (isGameStarted) {
       startNextRound(); // 게임이 시작되면 첫 라운드 실행
     }
@@ -378,30 +386,47 @@ const QuizGame = ({ room }) => {
 
       if (isCorrectAnswer) {
         setShowAnswer(true);  // 정답 화면 표시
-        console.log('정답입니다!');
+        setCorrectAnswers((prevCorrect) => prevCorrect + 1);
+        if (hintInterval.current) {
+          clearInterval(hintInterval.current);
+          hintInterval.current = null;
+        }
+        if (progressInterval.current) {
+          clearInterval(progressInterval.current);
+          progressInterval.current = null; // 초기화
+        }
+        setProgress(100);
+
+        const correctField = time_limit === 30 ? 'correct_30' : 'correct_15';
+        updateUserStats(correctField);
+        
+        setTimeout(() => {
+          setShowAnswer(false); // 정답 화면 숨김
+          startNextRound(); // 다음 라운드 시작
+        }, 3000); // 3초 동안 정답 화면 표시
       }
+    }
+  };
+
+  const updateUserStats = async (field) => {
+    try {
+      await axios.patch('/users/stats', { field });
+      console.log(`${field} updated successfully`);
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
     }
   };
   
   return (
     <div className="game-container">
       <header className="room-info">
-        <span>{room.room_name}</span>
-        <span>라운드 {round}/{room.max_round}</span>
-        <span>제한 시간: {room.time}초</span>
+        <span>라운드 {round}/{max_rounds}</span>
+        <span>제한 시간: {time_limit}초</span>
+        <span>선택한 세대: {selected_generations.map(gen => `${gen}`).join(', ')}세대</span>
       </header>
 
       <div className="game-display-container">
         {/* 왼쪽 프로필 리스트 */}
-        <div className="profile-column">
-          {Array(4).fill(null).map((_, index) => (
-            <div key={index} className="participant-card">
-              <div className="profile-circle">프로필</div>
-              <div className="nickname">닉네임</div>
-              <div className="score">점수: 2322</div>
-            </div>
-          ))}
-        </div>
 
         <div className="game-content">
           <div className="progress-bar-container">
@@ -486,14 +511,13 @@ const QuizGame = ({ room }) => {
                       {showResult && (
                         <div className="result-popup">
                           <h2>게임 종료!</h2>
-                          <p>맞춘 문제 수: {correctAnswers} / {room.max_round}</p>
+                          <p>맞춘 문제 수: {correctAnswers} / {max_rounds}</p>
                           <button onClick={handleRestart}>게임 다시 시작</button>
                         </div>
                       )}
               </div>
             )}
           </div>
-
 
           {/* 채팅창 */}
           <div className="chat-container">
@@ -518,15 +542,7 @@ const QuizGame = ({ room }) => {
         </div>
 
         {/* 오른쪽 프로필 리스트 */}
-        <div className="profile-column">
-          {Array(4).fill(null).map((_, index) => (
-            <div key={index} className="participant-card">
-              <div className="profile-circle">프로필</div>
-              <div className="nickname">닉네임</div>
-              <div className="score">점수: 2322</div>
-            </div>
-          ))}
-        </div>
+        
       </div>
 
       

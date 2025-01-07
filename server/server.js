@@ -4,7 +4,7 @@ const cookieSession = require("cookie-session");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
-const roomRoutes = require("./routes/rooms");
+const userRoutes = require("./routes/users");
 const corsMiddleware = require("./middleware/cors.middleware");
 const User = require("./models/User");
 
@@ -27,14 +27,14 @@ app.use(
 
 // 라우트 설정
 app.use("/auth", authRoutes);
-app.use("/rooms", roomRoutes);
+app.use("/users", userRoutes);
 
 
 // 기본 라우트에서 Room 데이터 출력
 app.get("/", async (req, res) => {
   try {
     const users = await User.find(); // Atlas에서 모든 Room 데이터 가져옴
-    console.log("user dbs:", users); // 터미널에 로그 출력
+    console.log("user DB:", users); // 터미널에 로그 출력
     res.json(users); // JSON 형식으로 브라우저에 응답
   } catch (err) {
     console.error("❌ Error fetching users:", err);
