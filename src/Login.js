@@ -107,7 +107,7 @@ const Login = () => {
             style={ashStyle} // 동적 스타일 추가
           />
           <div className="login-box">
-            <button className="kakao-login-button" onClick={handleKakaoLogin}>카카오 로그인 </button>
+            <button className="kakao-login-button" onClick={handleKakaoLogin}> 카카오 로그인 </button>
             <p>이 포켓몬은 뭘까~~~용</p> 
             {silhouette && (
               <img

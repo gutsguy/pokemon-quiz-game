@@ -1,6 +1,13 @@
+@font-face {
+    font-family: 'CustomFont';
+    /* 폰트 이름 */
+    src: url('/src/font.ttf') format('truetype');
+    /* 폰트 파일 경로 */
+}
+
 body {
     margin: 0;
-    font-family: "Arial", sans-serif;
+    font-family: 'CustomFont', sans-serif;
     background-color: #f2f2f2;
 }
 
@@ -60,6 +67,7 @@ body {
 
 .login-box p {
     font-size: 25px;
+
 }
 
 .kakao-login-button {
@@ -71,6 +79,7 @@ body {
     width: 18vw;
     height: 5vw;
     cursor: pointer;
+    font-family: 'CustomFont';
 }
 
 .kakao-login-button:hover {
