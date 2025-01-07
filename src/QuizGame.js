@@ -195,7 +195,6 @@ const QuizGame = ({ room }) => {
     return color.map((c) => Math.round(c / step) * step);
   };
 
-
   const createSilhouette = (imageUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -226,7 +225,6 @@ const QuizGame = ({ room }) => {
       };
     });
   };
-
 
   const createPixelatedImage = (imageUrl) => {
     return new Promise((resolve) => {
@@ -294,21 +292,24 @@ const QuizGame = ({ room }) => {
       setShowAnswer(false); // 5초 후 정답 화면 숨김
       setCurrentHintIndex(0); // 힌트 인덱스 초기화
       startNextRound(); // 다음 라운드 시작
-    }, 5000); // 5초 동안 정답 화면을 표시
+    }, 3000); // 5초 동안 정답 화면을 표시
   };
 
   const startNextRound = async() => {
     setRound((prevRound) => {
-      if (prevRound >= room.max_round) {
+      if (prevRound + 1 > room.max_round) {
         console.log("끝났어용");
         setShowResult(true);  // 결과 팝업 표시
-        return;  // 라운드 증가 중지
+        setCountdown(null);  // 카운트다운 중단
+        setShowAnswer(false);  // 정답 화면 숨김
+        return prevRound;  // 라운드 증가 중지
       }
+      return prevRound + 1;  // 라운드 증가
     });
+    
     setShowAnswer(false); // 정답 화면 숨김
     setCountdown(3); // 카운트다운 시작
-
-    setRound((prevRound) => prevRound + 1);
+    
     console.log("카운트다운 시작");
     const nextPokemon = await fetchRandomPokemon();
 
