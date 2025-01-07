@@ -108,7 +108,6 @@ router.get("/kakao/callback", async (req, res) => {
         social_id: userResponse.data.id,
         nickname: userResponse?.data?.properties?.nickname || null,
         email: userResponse?.data?.kakao_account?.email || null,
-        rank: 0,
         picture : "", 
         highscore: 0, 
         total_15: 0, // 누적 전체 시도
@@ -116,13 +115,10 @@ router.get("/kakao/callback", async (req, res) => {
         correct_15 : 0,
         correct_30 : 0,
       });
-  
+      console.error("Error creating user:", error);
+      console.log("Received data for createUser:", { social_id, nickname, email });
     } else {
-      await userService.updateUser({
-        social_id: userResponse.data.id,
-        nickname: userResponse?.data?.properties?.nickname || null,
-        email: userResponse?.data?.kakao_account?.email || null,
-      });
+      console.log("Existing user:", existingUser);
     }
 
     const user = await userService.getUserBySocialId(userResponse.data.id);

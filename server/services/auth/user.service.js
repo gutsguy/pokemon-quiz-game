@@ -2,6 +2,7 @@ const User = require("../../models/User");
 
 module.exports = {
   async getUserBySocialId(social_id) {
+    console.log("Searching user by social_id:", social_id);
     return User.findOne({
       social_id: social_id,
     });
@@ -15,7 +16,6 @@ module.exports = {
         social_id,
         nickname,
         email,
-        rank: 0,
         picture : "",
         highscore: 0, 
         total_15: 0, // 누적 전체 시도
