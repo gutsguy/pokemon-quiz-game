@@ -4,14 +4,27 @@ import quizgame from '/root/pokemon-quiz-game/src/pokemonquizgame.png';
 import professor from '/root/pokemon-quiz-game/src/professor.png';
 import ash from '/root/pokemon-quiz-game/src/ash.png';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
+  const navigate = useNavigate();
 
-  const handleKakaoLogin = () => {
+
+  const handleKakaoLogin = async () => {
+    try {
+      // 로그인 상태 확인
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/auth/me`, { withCredentials: true });
+      if (response.data) {
+        navigate("/lobby"); // 이미 로그인 상태라면 로비로 이동
+        return;
+      }
+    } catch {
+      // 로그인되지 않은 상태라면 로그인 진행
+    }
+
     // 서버 로그인 URL로 리다이렉트
-    window.location.href = `${process.env.REACT_APP_API_URL}/auth/kakao?redirect=${window.location.origin + (query.get("redirect") || "/")
-      }`;
+    window.location.href = `${process.env.REACT_APP_API_URL}/auth/kakao?redirect=${window.location.origin + (query.get("redirect") || "/")}`;
   };
 
   const [ashStyle, setAshStyle] = useState({});
@@ -23,8 +36,8 @@ const Login = () => {
     const { innerWidth, innerHeight } = window;
 
     // 마우스 위치에 따라 기울어지는 정도 계산
-    const tiltX = ((clientX / innerWidth) - 0.5) * 40; // -10 ~ 10도
-    const tiltY = ((clientY / innerHeight) - 0.5) * 40; // -10 ~ 10도
+    const tiltX = ((clientX / innerWidth) - 0.5) * -50; // -10 ~ 10도
+    const tiltY = ((clientY / innerHeight) - 0.5) * -50; // -10 ~ 10도
 
     setAshStyle({
       transform: `rotateX(${-tiltY}deg) rotateY(${tiltX}deg)`,

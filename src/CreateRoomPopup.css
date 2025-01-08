@@ -8,6 +8,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 4;
 }
 
 .popup-content {
@@ -40,15 +41,16 @@ input[type='number'],
 select {
     width: 100%;
     padding: 8px;
-    margin-top: 5px;
+    margin-top: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
 .generation-buttons {
+    margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 11px;
 }
 
 .generation-btn {

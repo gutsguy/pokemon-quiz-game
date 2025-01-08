@@ -23,9 +23,9 @@ const CreateRoomPopup = ({ onClose }) => {
         const mode = Number(e.target.value);
         setTimeLimit(mode);
 
-        if (mode === -1) { // 무한 모드 선택 시
-            setMaxRounds(9999); // 큰 값으로 설정
-            setTimeLimit(15)
+        if (mode === 10) { // 무한 모드 선택 시
+            setMaxRounds(999999999); // 큰 값으로 설정
+            setTimeLimit(10)
             setSelectedGenerations(generations); // 모든 세대 자동 선택
         } else {
             setMaxRounds(5); // 기본값으로 재설정
@@ -54,10 +54,10 @@ const CreateRoomPopup = ({ onClose }) => {
                 </div>
                 <div className="form-group">
                     <label>게임 모드</label>
-                    <select value={timeLimit} onChange={handleModeChange}>
-                        <option value={30}>이지 모드</option>
-                        <option value={15}>하드 모드</option>
-                        <option value={-1}>무한 모드</option>
+                    <select value={String(timeLimit)} onChange={handleModeChange}>
+                        <option value="30">이지 모드</option>
+                        <option value="15">하드 모드</option>
+                        <option value="10">무한 모드</option>
                     </select>
                 </div>
                 <div className="form-group">
@@ -67,7 +67,7 @@ const CreateRoomPopup = ({ onClose }) => {
                         min="1"
                         value={maxRounds}
                         onChange={(e) => setMaxRounds(Number(e.target.value))}
-                        disabled={timeLimit === -1} // 무한 모드일 때 비활성화
+                        disabled={timeLimit === 10} // 무한 모드일 때 비활성화
                     />
                 </div>
                 <div className="form-group">
@@ -78,7 +78,7 @@ const CreateRoomPopup = ({ onClose }) => {
                                 key={gen}
                                 className={`generation-btn ${selectedGenerations.includes(gen) ? 'selected' : ''}`}
                                 onClick={() => handleGenerationClick(gen)}
-                                disabled={timeLimit === 15 && maxRounds === 9999}
+                                disabled={timeLimit === 15 && maxRounds === 999999999}
                             >
                                 {gen}세대
                             </button>

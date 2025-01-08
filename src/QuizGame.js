@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import './QuizGame.css';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { authStore } from "./store/AuthStore";
+import bgmFile from './battle_bgm.mp3';
 
 const QuizGame = () => {
   const [pokemonImage, setPokemonImage] = useState(null);
@@ -16,6 +17,7 @@ const QuizGame = () => {
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [round, setRound] = useState(0);
   const [chatMessages, setChatMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
   const [correctAnswers, setCorrectAnswers] = useState(0);  // 맞춘 문제 수
   const [showResult, setShowResult] = useState(false);  // 결과 팝업 여부
   const inputRef = useRef();
@@ -25,8 +27,12 @@ const QuizGame = () => {
   const [gameConfig, setGameConfig] = useState(null);
   const { max_rounds = 0, time_limit = 0, selected_generations = [] } = gameConfig || {};
 
+  const chatContainerRef = useRef(null);
+  const bgmRef = useRef(null);
+
   const { user } = authStore();
   const userId = user?._id;
+  const navigate = useNavigate();
 
   const timelimit = time_limit * 1000; // 한 라운드 전체 시간 (밀리초)
 
@@ -259,6 +265,37 @@ const QuizGame = () => {
     });
   };
 
+  const handleInfiniteGameOver = async () => {
+    if (time_limit === 10) { // 무한 모드일 때만 처리
+      try {
+        // 서버에서 현재 highscore 가져오기
+        const response = await axios.get(`http://172.10.7.78:5000/users/${userId}`, {
+          withCredentials: true,
+        });
+
+        console.log("User data response:", response.data); // 응답 데이터 확인
+
+        const currentHighscore = response.data.highscore;
+
+        // 현재 점수가 highscore보다 높으면 업데이트
+        if (correctAnswers + 1> currentHighscore) {
+          await axios.patch(
+            `http://172.10.7.78:5000/users/${userId}`,
+            { field: "highscore", value: correctAnswers + 1 }, // 새로운 highscore 값 전달
+            { withCredentials: true }
+          );
+          console.log("Highscore updated to:", correctAnswers + 1);
+        } else {
+          console.log("Highscore remains unchanged:", currentHighscore);
+        }
+      } catch (error) {
+        console.error("Error updating highscore:", error);
+      }
+    }
+
+    setShowResult(true); // 결과 팝업 표시
+  };
+
 
   const startHintSequence = () => {
     let index = 0;
@@ -279,7 +316,23 @@ const QuizGame = () => {
 
       if (index >= 7) {
         clearInterval(hintInterval.current); // 모든 힌트 출력 후 정리
+        // 무한모드가 끝났을때때
+        if (time_limit == 10 && !showAnswer) {
+          setShowResult(true);
+          setRound(10000000000)
+          handleInfiniteGameOver();
+          console.log("무한모드 끝");
+          if (hintInterval.current) {
+            clearInterval(hintInterval.current);
+            hintInterval.current = null;
+          }
+          if (progressInterval.current) {
+            clearInterval(progressInterval.current);
+            progressInterval.current = null; // 초기화
+          }
+        }
         showAnswerScreen(); // 정답 화면 표시
+        
       }
     }, intervalTime);
 
@@ -296,15 +349,24 @@ const QuizGame = () => {
 
   const showAnswerScreen = () => {
     setShowAnswer(true); // 정답 화면 표시
+    if (hintInterval.current) {
+      clearInterval(hintInterval.current);
+      hintInterval.current = null;
+    }
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current);
+      progressInterval.current = null; // 초기화
+    }
     setTimeout(() => {
-      setShowAnswer(false); // 5초 후 정답 화면 숨김
+      setShowAnswer(false); // 3초 후 정답 화면 숨김
       setCurrentHintIndex(0); // 힌트 인덱스 초기화
       startNextRound(); // 다음 라운드 시작
-    }, 3000); // 5초 동안 정답 화면을 표시
+    }, 3000); // 3초 동안 정답 화면을 표시
   };
 
-  const startNextRound = async() => {
+  const startNextRound = async () => {
     setRound((prevRound) => {
+      // 끝났을때
       if (prevRound + 1 > max_rounds) {
         console.log("끝났어용");
         setShowResult(true);  // 결과 팝업 표시
@@ -312,13 +374,17 @@ const QuizGame = () => {
         setShowAnswer(false);  // 정답 화면 숨김
         return prevRound;  // 라운드 증가 중지
       }
-      
       return prevRound + 1;  // 라운드 증가
     });
-    
+
+    // 라운드가 max_rounds를 초과했는지 확인
+    if (round + 1 > max_rounds) {
+      return; // 다음 라운드 및 힌트 시퀀스 시작하지 않음
+    }
+
     setShowAnswer(false); // 정답 화면 숨김
     setCountdown(3); // 카운트다운 시작
-    
+
     const nextPokemon = await fetchRandomPokemon();
 
     const field = time_limit === 30 ? 'total_30' : 'total_15';
@@ -346,12 +412,17 @@ const QuizGame = () => {
 
 
 
+
   const handleRestart = () => {
-    setRound(0);
-    setCorrectAnswers(0);
-    setShowResult(false);  // 게임 재시작
+    navigate("/lobby");
   };
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+  
   useEffect(() => {
     const storedConfig = localStorage.getItem('gameConfig');; // localStorage에서 가져오기
     if (storedConfig) {
@@ -361,7 +432,11 @@ const QuizGame = () => {
       console.error('게임 설정을 불러오지 못했습니다.');
     }
     if (isGameStarted) {
+      bgmRef.current.play();
       startNextRound(); // 게임이 시작되면 첫 라운드 실행
+    }
+    else {
+      bgmRef.current.pause();
     }
 
     return () => {
@@ -370,10 +445,15 @@ const QuizGame = () => {
     };
   }, [isGameStarted]);
 
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value); // 입력값 상태 업데이트
+  };
+
   // 채팅 전송 및 업데이트
-  const handleSendMessage = (e) => {
-    if (e.key === 'Enter' && inputRef.current.value.trim()) {
-      const newMessage = inputRef.current.value.trim();  // 입력된 메시지
+  const handleSendMessage = useCallback ((e) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      const newMessage = inputValue.trim();  // 입력된 메시지
       const isCorrectAnswer = newMessage === pokemonName;  // 정답 여부 확인
 
       const newChatMessage = {
@@ -382,9 +462,12 @@ const QuizGame = () => {
       };
 
       setChatMessages((prevMessages) => [...prevMessages, newChatMessage]);  // 메시지 추가
-      inputRef.current.value = '';  // 입력창 초기화
+      setInputValue('');  // 입력창 초기화
 
-      if (isCorrectAnswer) {
+
+      // 정답일때
+      if (isCorrectAnswer && !showAnswer) {
+        console.log("정답입니다");
         setShowAnswer(true);  // 정답 화면 표시
         setCorrectAnswers((prevCorrect) => prevCorrect + 1);
         if (hintInterval.current) {
@@ -406,7 +489,7 @@ const QuizGame = () => {
         }, 3000); // 3초 동안 정답 화면 표시
       }
     }
-  };
+  });
 
   const updateUserStats = async (field) => {
     const requestUrl = `http://172.10.7.78:5000/users/${userId}`;
@@ -424,6 +507,7 @@ const QuizGame = () => {
   
   return (
     <div className="game-container">
+      <audio ref={bgmRef} src={bgmFile} loop />
       <header className="room-info">
         <span>라운드 {round}/{max_rounds}</span>
         <span>제한 시간: {time_limit}초</span>
@@ -517,7 +601,7 @@ const QuizGame = () => {
                         <div className="result-popup">
                           <h2>게임 종료!</h2>
                           <p>맞춘 문제 수: {correctAnswers} / {max_rounds}</p>
-                          <button onClick={handleRestart}>게임 다시 시작</button>
+                          <button onClick={handleRestart}>로비로 나가기</button>
                         </div>
                       )}
               </div>
@@ -526,7 +610,7 @@ const QuizGame = () => {
 
           {/* 채팅창 */}
           <div className="chat-container">
-            <div className="chat-messages">
+            <div className="chat-messages" ref={chatContainerRef}>
               {chatMessages.map((message, index) => (
                 <p
                   key={index}
@@ -538,10 +622,11 @@ const QuizGame = () => {
             </div>
             <input
               type="text"
+              value={inputValue} // 상태와 바인딩
+              onChange={handleInputChange} // 입력값 업데이트
+              onKeyDown={handleSendMessage} // 메시지 전송
               placeholder="채팅을 입력해주세요."
               className="chat-input"
-              ref={inputRef}
-              onKeyDown={handleSendMessage}
             />
           </div>
         </div>

@@ -24,7 +24,6 @@ const App = () => {
         .then((data) => {
           setUser(data);
           setInitialized(true);
-          console.log("User Info:", data);
         })
         .catch(() => {
           setInitialized(true);
@@ -39,9 +38,8 @@ const App = () => {
       <div className="app">
         <Routes>
           {/* 로그인 화면 */}
-          <Route
-            path="/login"
-            element={loggedIn ? <Navigate to="/lobby" replace /> : <Login />}
+          <Route 
+          path="/login" element={<Login />} 
           />
           {/* 로비 화면 */}
           <Route
