@@ -1,70 +1,94 @@
-# Getting Started with Create React App
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/f99f0267-101e-4bcb-9e93-436e649978c5/image.png)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/c4d1b6eb-3656-424e-bde1-2eaf4baa0bb0/image.png)
 
-## Available Scripts
+# 🔎**포켓몬 지식**도 스펙이 될 수 있을까요?
 
-In the project directory, you can run:
+- **증빙 자료**만 있으면 스펙이 될 수도 있습니다.
+- **포켓몬 퀴즈 게임**에서는 본인의 **포켓몬 지식**을 증명할 수 있습니다.
+- 포켓몬 퀴즈 게임 **전세계 1등**을 노려보세요!
 
-### `npm start`
+### 개발 툴
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **FE** : React
+- **BE** : Node.js, RestAPI
+- **DB** : MongoDB
+- **Language** : JavaScript
+- **Design** : Figma
+- **IDE** : vscode
+- **Coop** : Github
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 팀원 소개
 
-### `npm test`
+**임수민**
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- KAIST 신소재공학과 22학번
+- https://github.com/suelim02
 
-### `npm run build`
+**조어진**
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- UNIST 컴퓨터공학과 20학번
+- https://github.com/gutsguy
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## <Design Details>
 
-### `npm run eject`
+### 1. 로그인 화면
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/f76c41ff-87aa-45d9-9bef-056cd50688de/image.png)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- 포켓몬 퀴즈 게임은 카카오 로그인을 지원합니다.
+- 양 옆의 지우와 오박사의 이미지는 css의 `drop-shadow`와 `tilt` 기능을 사용하여 `mouse pointer` 를 따라 입체적으로 기울어집니다.
+- 페이지에 접속할 때 마다 [**`PokéAPI`](https://pokeapi.co/)** 에서 랜덤 포켓몬 정보를 `fetch` 하여 실루엣을 보여줍니다.
+- 여러번 새로고침을 하여 본 게임에 들어가기 전 미리 예열을 하고 들어갈 수 있도록 합시다.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+[화면 녹화 중 2025-01-08 194555.mp4](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/4e38efae-9022-4fd8-a993-022547b4f729/%ED%99%94%EB%A9%B4_%EB%85%B9%ED%99%94_%EC%A4%91_2025-01-08_194555.mp4)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 2. 로비 화면
 
-## Learn More
+- 로비 화면에서는 **게임시작** 버튼이 있고, 자신의 **프로필**과 **리더보드**를 확인할 수 있습니다.
+- 프로필의 **정답률**과 **하이스코어**는 `DB`에 저장되며, 매 게임을 할 때마다 갱신됩니다.
+    - 하이스코어
+    - 이지 모드 정답률
+    - 하드 모드 정답률
+    - 총 진행한 라운드 수
+- 게임 시작 버튼을 누르면 **게임 모드 설정**을 할 수 있는 팝업 창이 나옵니다.
+    - **이지 모드** : 각 라운드의 time limit이 30초 입니다.
+    - **하드 모드** : 각 라운드의 time limit이 15초 입니다.
+    - **무한 모드** : 각 라운드의 time limit이 10초 이고, 이름 맞히기를 실패할 때까지 계속됩니다.
+        - 모든 세대의 포켓몬이 전부 출현합니다.
+        - 맞힌 문제의 개수 만큼 하이스코어에 반영됩니다.
+        - **고득점**을 노려 리더보드에 이름을 올려보세요.
+    - 원하는 **세대를 선택**하여 특정 세대의 포켓몬만을 선택할 수 있습니다.
+    - 연식이 있어 최근 포켓몬을 모르는 사람은 예전 세대를 선택해서 게임을 즐겨보세요!
+    
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+[화면 녹화 중 2025-01-08 194822.mp4](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/04e7b235-0ece-46fb-b8f2-84650cf47021/%ED%99%94%EB%A9%B4_%EB%85%B9%ED%99%94_%EC%A4%91_2025-01-08_194822.mp4)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 3. 게임 화면
 
-### Code Splitting
+[화면 녹화 중 2025-01-08 195601.mp4](https://prod-files-secure.s3.us-west-2.amazonaws.com/f6cb388f-3934-47d6-9928-26d2e10eb0fc/64a3ab4e-81f4-4a29-8f4d-7fc48761d4b5/%ED%99%94%EB%A9%B4_%EB%85%B9%ED%99%94_%EC%A4%91_2025-01-08_195601.mp4)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- 게임은 매 라운드마다 **랜덤**으로 선택된 포켓몬의 힌트를 순서대로 보여줍니다.
+- 힌트는 **주요색 - 세대 - 타입 - 글자수 - 픽셀화 - 실루엣** 순서입니다.
+- **채팅 창**에 정답을 입력할 수 있고, 정답을 맞췄을 경우 채팅이 **보라색**으로 표시됩니다. 또한 정답 이미지와 이름이 곧바로 나옵니다.
+- 시간이 전부 지나가 버리면 자동으로 정답 이미지와 이름이 나오며, 오답으로 처리되어 DB에 저장됩니다.
+- **이지 모드**와 **하드 모드**에서는 정해진 최대 라운드가 끝나면 결과 확인 팝업 창이 나옵니다.
+- **무한 모드**는 한 번만 정답을 맞히지 못해도 게임이 종료되지만, 리더보드에 반영될 수 있습니다.
 
-### Analyzing the Bundle Size
+### 4. APIs
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+[APIs](https://www.notion.so/5ba4008a908d49cbb85b166b51c7f212?pvs=21)
 
-### Making a Progressive Web App
+### 5. 개발 후기
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **조어진** : 처음에 실시간 통신 게임을 만들 생각으로 시작했지만, 기술력 부족으로 인해 솔로플레이로 바꾼 게 너무 아쉽습니다. 그냥 제가 좋아서 시작한 기획인데 오케이해주고 열심히 같이 해준 팀원에게 고맙고, 기회가 된다면 더 좋은 게임으로 진화 시켜주고 싶습니다.
 
-### Advanced Configuration
++
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- **임수민** :  서버와 DB를 연결하여 무언가 구현해본 경험이 처음이라 개념 이해부터 다소 어렵게 느껴졌다. kVPN 사용부터 서버 연결, 로그인 그 후의 과정까지 매 단계 단계 고비가 있었지만 실제로 만들어서 게임을 진행해보니 뿌듯하다. 많은 부분을 배워간 것 같아서 기분이 좋고 많은 부분에서 헤맸는데 방향성을 제시하고 답을 알려주신 팀원분께 감사합니다.
 
-### Deployment
+K-VPN 연결 후 접속
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+게임 url : http://172.10.7.78:3000
